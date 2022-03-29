@@ -11,15 +11,6 @@ namespace CensusService.Tests
         }
 
         [Fact]
-        public void Meter_InputIsString_ReturnsOne()
-        {
-            var SimpleMeter = CreateDefaultSimpleMeter();
-            int result = SimpleMeter.Meter( "Hello World" );
-
-            Assert.True(result == 1, "Single meter correctly returns 1");
-        }
-
-        [Fact]
         public void Meter_InputIsNull_ReturnsException()
         {
             var SimpleMeter = CreateDefaultSimpleMeter();
@@ -28,7 +19,16 @@ namespace CensusService.Tests
         }
 
         [Fact]
-        public void Meter_SameMeterMultipleTimes_ReturnsExpectedResult()
+        public void Meter_SingleMeterNoValue_ReturnsOne()
+        {
+            var SimpleMeter = CreateDefaultSimpleMeter();
+            int result = SimpleMeter.Meter( "Hello World" );
+
+            Assert.True(result == 1, "Single meter correctly returns 1");
+        }
+
+        [Fact]
+        public void Meter_SameMeterNoValue_ReturnsIncrementedValue()
         {
             var SimpleMeter = CreateDefaultSimpleMeter();
 
@@ -39,7 +39,7 @@ namespace CensusService.Tests
         }
 
         [Fact]
-        public void Meter_DifferentMeters_Return1()
+        public void Meter_DifferentMeters_BothReturn1()
         {
             var SimpleMeter = CreateDefaultSimpleMeter();
 
@@ -48,17 +48,19 @@ namespace CensusService.Tests
             Assert.True(result1 == 1 && result2 == 1, "Both meters should return 1");
         }
 
-        [Fact]
-        public void Meter_ValueOf2_Returns2()
+        [Theory]
+        [InlineData(2)]
+        [InlineData(5)]
+        public void Meter_SingleMeterValue_ReturnsValueInput(int value)
         {
             var SimpleMeter = CreateDefaultSimpleMeter();
 
-            var result = SimpleMeter.Meter("Test", 2);
-            Assert.True(result == 2, "Meter should return 2");
+            var result = SimpleMeter.Meter("Test", value);
+            Assert.True(result == value, "Meter should return metered value");
         }
 
         [Fact]
-        public void Meter_SameMeterValueOf2_Returns4()
+        public void Meter_SameMeterValue_ReturnsIncrementedValueInput()
         {
             var SimpleMeter = CreateDefaultSimpleMeter();
 
