@@ -25,5 +25,17 @@ namespace CensusService
 
             return _meterValues[meterName];
         }
+
+        public int? GetMeter(string meterName)
+        {
+            if (meterName is null) throw new ArgumentNullException("Meter name must not be null");
+
+            if (_meterValues.TryGetValue(meterName, out int meterValue))
+            {
+                return meterValue;
+            }
+
+            return null;
+        }
     }
 }
