@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Census.Services
+namespace CensusService
 {
     public class TestLogger
     {
