@@ -1,4 +1,7 @@
-﻿using System;
+﻿using Moq;
+using System;
+using System.IO;
+using System.IO.Abstractions;
 using Xunit;
 
 namespace CensusService.Tests
@@ -142,6 +145,77 @@ namespace CensusService.Tests
             var result2 = simpleMeter.GetMeter("Test2");
 
             Assert.True(result1 == 3 && result2 == 12, "GetMeter returns correct values for different meters");
+        }
+
+        #endregion
+
+        #region SaveData (FileSystemTests)
+
+        [Theory]
+        [InlineData("Test1")]
+        [InlineData("Test2")]
+        public void SaveData_SingleMeterNoValue_StoresCorrectValue(string value)
+        {
+            var path = "../Meters.txt";
+
+            var mockFileIO = new Mock<IFileSystem>();
+            mockFileIO.Setup(t => t.File.Exists(path)).Returns(false);
+            var simpleMeter = new SimpleMeter(mockFileIO.Object);
+
+            simpleMeter.Meter(value);
+            simpleMeter.SaveData(path);
+
+            mockFileIO.Verify(f => f.File.WriteAllText(path, $"{value}:1;"), Times.Once);
+        }
+
+        [Fact]
+        public void SaveData_DifferentMetersNoValue_StoresCorrectValues()
+        {
+            var path = "../Meters.txt";
+
+            var mockFileIO = new Mock<IFileSystem>();
+            mockFileIO.Setup(t => t.File.Exists(path)).Returns(false);
+            var simpleMeter = new SimpleMeter(mockFileIO.Object);
+
+            simpleMeter.Meter("Test1");
+            simpleMeter.Meter("Test2");
+            simpleMeter.SaveData(path);
+
+            mockFileIO.Verify(f => f.File.WriteAllText(path, "Test1:1;Test2:1;"), Times.Once);
+        }
+
+        [Fact]
+        public void SaveData_SingleMeterDefaultClear_ClearsLocalData()
+        {
+            var path = "../Meters.txt";
+
+            var mockFileIO = new Mock<IFileSystem>();
+            mockFileIO.Setup(t => t.File.Exists(path)).Returns(false);
+            var simpleMeter = new SimpleMeter(mockFileIO.Object);
+
+            simpleMeter.Meter("Test");
+            simpleMeter.SaveData(path);
+            var result = simpleMeter.GetMeter("Test");
+
+            mockFileIO.Verify(f => f.File.WriteAllText(path, "Test:1;"), Times.Once);
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void SaveData_SingleMeterNoLocalClear_LocalDataRemains()
+        {
+            var path = "../Meters.txt";
+
+            var mockFileIO = new Mock<IFileSystem>();
+            mockFileIO.Setup(t => t.File.Exists(path)).Returns(false);
+            var simpleMeter = new SimpleMeter(mockFileIO.Object);
+
+            simpleMeter.Meter("Test");
+            simpleMeter.SaveData(path, false);
+            var result = simpleMeter.GetMeter("Test");
+
+            mockFileIO.Verify(f => f.File.WriteAllText(path, "Test:1;"), Times.Once);
+            Assert.True(result == 1, "Local data isn't cleared");
         }
 
         #endregion

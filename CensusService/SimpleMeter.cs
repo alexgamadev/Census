@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Abstractions;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,7 +10,18 @@ namespace CensusService
 {
     public class SimpleMeter
     {
-        private Dictionary<string, int> _meterValues = new Dictionary<string, int>();
+        private readonly Dictionary<string, int> _meterValues = new Dictionary<string, int>();
+        private readonly IFileSystem _fileSystem;
+
+        public SimpleMeter()
+        {
+
+        }
+
+        public SimpleMeter(IFileSystem fileSystem)
+        {
+            _fileSystem = fileSystem;
+        }
 
         public int Meter( string meterName, int value = 1 )
         {
@@ -36,6 +49,28 @@ namespace CensusService
             }
 
             return null;
+        }
+
+        
+        public void SaveData(string path, bool clearLocalData = true)
+        {
+            _fileSystem.File.WriteAllText(path, ConvertDataToText());
+
+            if( clearLocalData )
+            {
+                _meterValues.Clear();
+            }
+        }
+
+        private string ConvertDataToText()
+        {
+            string text = "";
+            foreach( var item in _meterValues )
+            {
+                text += $"{item.Key}:{item.Value};";
+            }
+
+            return text;
         }
     }
 }
