@@ -8,17 +8,17 @@ using System.Threading.Tasks;
 
 namespace CensusService
 {
-    public class SimpleMeter
+    public class CensusMeter
     {
         private readonly Dictionary<string, int> _meterValues = new Dictionary<string, int>();
         private readonly IFileSystem _fileSystem;
 
-        public SimpleMeter()
+        public CensusMeter()
         {
 
         }
 
-        public SimpleMeter(IFileSystem fileSystem)
+        public CensusMeter(IFileSystem fileSystem)
         {
             _fileSystem = fileSystem;
         }
