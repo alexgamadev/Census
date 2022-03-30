@@ -1,6 +1,6 @@
 using Xunit;
 
-namespace CensusService.Tests
+namespace Census.Logging.Tests
 {
     public class TestLoggerTests
     {

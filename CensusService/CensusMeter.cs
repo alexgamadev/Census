@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CensusService
+namespace Census.Metering
 {
     public class CensusMeter
     {
@@ -23,6 +23,13 @@ namespace CensusService
             _fileSystem = fileSystem;
         }
 
+        /// <summary>
+        /// Meters a value to a provided name. Example: Meter("Score", score) will increment the score meter by the given value
+        /// </summary>
+        /// <param name="meterName">The name of the meter</param> 
+        /// <param name="value">The amount to increment the meter by</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
         public int Meter( string meterName, int value = 1 )
         {
             if (meterName is null) throw new ArgumentNullException("Meter name must not be null");

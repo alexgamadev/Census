@@ -4,7 +4,7 @@ using System.IO;
 using System.IO.Abstractions;
 using Xunit;
 
-namespace CensusService.Tests
+namespace Census.Metering.Tests
 {
     public class CensusMeterTests
     {
