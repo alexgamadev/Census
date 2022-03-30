@@ -37,5 +37,6 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: Library File
-        path: Census/CensusService/bin/Release/net471/CensusService.dll
+        path: D:\a\Census\Census\CensusService\bin\Release\net471\CensusService.dll
+        if-no-files-found: error
 
