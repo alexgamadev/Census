@@ -36,7 +36,7 @@ jobs:
     - name: 'Upload Artifact'
       uses: actions/upload-artifact@v3
       with:
-        name: CensusService
-        path: D:\a\Census\Census\CensusService\bin\Release\net471\
+        name: Census
+        path: D:\a\Census\Census\Census.Metering\bin\Release\net471\
         if-no-files-found: error
 
