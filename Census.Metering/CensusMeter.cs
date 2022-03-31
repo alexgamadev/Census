@@ -4,13 +4,14 @@ using System.IO;
 using System.IO.Abstractions;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Census.Metering
 {
     public class CensusMeter
     {
-        private readonly Dictionary<string, int> _meterValues = new Dictionary<string, int>();
+        private Dictionary<string, int> _meterValues = new Dictionary<string, int>();
         private readonly IFileSystem _fileSystem;
 
         public CensusMeter()
@@ -71,23 +72,32 @@ namespace Census.Metering
         /// <param name="clearLocalData">Whether to clear the local meter storage</param>
         public void SaveData(string path, bool clearLocalData = false)
         {
-            _fileSystem.File.WriteAllText(path, ConvertDataToText());
+            //Load current meter data
+            //TODO: Move to it's own function
+            if (_fileSystem.File.Exists(path))
+            {
+                string storedJsonString = _fileSystem.File.ReadAllText(path);
+                var storedMeterValues = JsonSerializer.Deserialize<Dictionary<string, int>>(storedJsonString);
 
-            if( clearLocalData )
+                foreach (var item in storedMeterValues)
+                {
+                    if (_meterValues.ContainsKey(item.Key))
+                    {
+                        _meterValues[item.Key] += item.Value;
+                    } else
+                    {
+                        _meterValues.Add(item.Key, item.Value);
+                    }
+                }
+            }
+
+            string jsonString = JsonSerializer.Serialize(_meterValues);
+            _fileSystem.File.WriteAllText(path, jsonString);
+
+            if ( clearLocalData )
             {
                 _meterValues.Clear();
             }
-        }
-
-        private string ConvertDataToText()
-        {
-            string text = "";
-            foreach( var item in _meterValues )
-            {
-                text += $"{item.Key}:{item.Value};";
-            }
-
-            return text;
         }
     }
 }

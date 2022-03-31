@@ -149,7 +149,7 @@ namespace Census.Metering.Tests
 
         #endregion
 
-        #region SaveData (FileSystemTests)
+        #region SaveData (JsonTests)
 
         [Theory]
         [InlineData("Test1")]
@@ -165,13 +165,13 @@ namespace Census.Metering.Tests
             censusMeter.Meter(value);
             censusMeter.SaveData(path);
 
-            mockFileIO.Verify(f => f.File.WriteAllText(path, $"{value}:1;"), Times.Once);
+            mockFileIO.Verify(f => f.File.WriteAllText(path, $"{{\"{value}\":1}}"), Times.Once);
         }
 
         [Fact]
         public void SaveData_DifferentMetersNoValue_StoresCorrectValues()
         {
-            var path = "../Meters.txt";
+            var path = "../Meters.json";
 
             var mockFileIO = new Mock<IFileSystem>();
             mockFileIO.Setup(t => t.File.Exists(path)).Returns(false);
@@ -181,13 +181,13 @@ namespace Census.Metering.Tests
             censusMeter.Meter("Test2");
             censusMeter.SaveData(path);
 
-            mockFileIO.Verify(f => f.File.WriteAllText(path, "Test1:1;Test2:1;"), Times.Once);
+            mockFileIO.Verify(f => f.File.WriteAllText(path, "{\"Test1\":1,\"Test2\":1}"), Times.Once);
         }
 
         [Fact]
         public void SaveData_SingleMeterDefaultClear_ClearsLocalData()
         {
-            var path = "../Meters.txt";
+            var path = "../Meters.json";
 
             var mockFileIO = new Mock<IFileSystem>();
             mockFileIO.Setup(t => t.File.Exists(path)).Returns(false);
@@ -197,14 +197,14 @@ namespace Census.Metering.Tests
             censusMeter.SaveData(path, true);
             var result = censusMeter.GetMeter("Test");
 
-            mockFileIO.Verify(f => f.File.WriteAllText(path, "Test:1;"), Times.Once);
+            mockFileIO.Verify(f => f.File.WriteAllText(path, "{\"Test\":1}"), Times.Once);
             Assert.Null(result);
         }
 
         [Fact]
         public void SaveData_SingleMeterNoLocalClear_LocalDataRemains()
         {
-            var path = "../Meters.txt";
+            var path = "../Meters.json";
 
             var mockFileIO = new Mock<IFileSystem>();
             mockFileIO.Setup(t => t.File.Exists(path)).Returns(false);
@@ -214,8 +214,23 @@ namespace Census.Metering.Tests
             censusMeter.SaveData(path);
             var result = censusMeter.GetMeter("Test");
 
-            mockFileIO.Verify(f => f.File.WriteAllText(path, "Test:1;"), Times.Once);
+            mockFileIO.Verify(f => f.File.WriteAllText(path, "{\"Test\":1}"), Times.Once);
             Assert.True(result == 1, "Local data isn't cleared");
+        }
+
+        [Fact]
+        public void SaveData_SameMeterMultipleTimes_JsonValueUpdated()
+        {
+            var path = "Meters.json";
+
+            var mockFileIO = new Mock<IFileSystem>();
+            mockFileIO.Setup(t => t.File.WriteAllText(path, "{\"Test\":1}"));
+            var censusMeter = new CensusMeter(mockFileIO.Object);
+
+            censusMeter.Meter("Test", 4);
+            censusMeter.SaveData(path);
+
+            mockFileIO.Verify(f => f.File.WriteAllText(path, "{\"Test\":5}"), Times.Once);
         }
 
         #endregion
