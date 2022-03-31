@@ -194,7 +194,7 @@ namespace Census.Metering.Tests
             var censusMeter = new CensusMeter(mockFileIO.Object);
 
             censusMeter.Meter("Test");
-            censusMeter.SaveData(path);
+            censusMeter.SaveData(path, true);
             var result = censusMeter.GetMeter("Test");
 
             mockFileIO.Verify(f => f.File.WriteAllText(path, "Test:1;"), Times.Once);
@@ -211,7 +211,7 @@ namespace Census.Metering.Tests
             var censusMeter = new CensusMeter(mockFileIO.Object);
 
             censusMeter.Meter("Test");
-            censusMeter.SaveData(path, false);
+            censusMeter.SaveData(path);
             var result = censusMeter.GetMeter("Test");
 
             mockFileIO.Verify(f => f.File.WriteAllText(path, "Test:1;"), Times.Once);

@@ -46,6 +46,12 @@ namespace Census.Metering
             return _meterValues[meterName];
         }
 
+        /// <summary>
+        /// Gets the value of a meter
+        /// </summary>
+        /// <param name="meterName">The name of the meter</param>
+        /// <returns>The value of the meter (Null if meter doesn't exist)</returns>
+        /// <exception cref="ArgumentNullException"></exception>
         public int? GetMeter(string meterName)
         {
             if (meterName is null) throw new ArgumentNullException("Meter name must not be null");
@@ -58,8 +64,12 @@ namespace Census.Metering
             return null;
         }
 
-        
-        public void SaveData(string path, bool clearLocalData = true)
+        /// <summary>
+        /// Saves the local meter data to a text file at the given path.
+        /// </summary>
+        /// <param name="path">The path to save the meter data file to</param>
+        /// <param name="clearLocalData">Whether to clear the local meter storage</param>
+        public void SaveData(string path, bool clearLocalData = false)
         {
             _fileSystem.File.WriteAllText(path, ConvertDataToText());
 
