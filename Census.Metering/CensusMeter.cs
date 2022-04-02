@@ -73,6 +73,24 @@ namespace Census.Metering
         public void SaveData(string path, bool clearLocalData = false)
         {
             //Load current meter data
+            LoadData(path);
+
+            string jsonString = JsonSerializer.Serialize(_meterValues);
+            _fileSystem.File.WriteAllText(path, jsonString);
+
+            if ( clearLocalData )
+            {
+                _meterValues.Clear();
+            }
+        }
+
+        /// <summary>
+        /// Loads the JSON meter data stored at the given path, if it exists.
+        /// </summary>
+        /// <param name="path">The path to save the meter data file to</param>
+        public void LoadData(string path)
+        {
+            //Load current meter data
             //TODO: Move to it's own function
             if (_fileSystem.File.Exists(path))
             {
@@ -84,19 +102,12 @@ namespace Census.Metering
                     if (_meterValues.ContainsKey(item.Key))
                     {
                         _meterValues[item.Key] += item.Value;
-                    } else
+                    }
+                    else
                     {
                         _meterValues.Add(item.Key, item.Value);
                     }
                 }
-            }
-
-            string jsonString = JsonSerializer.Serialize(_meterValues);
-            _fileSystem.File.WriteAllText(path, jsonString);
-
-            if ( clearLocalData )
-            {
-                _meterValues.Clear();
             }
         }
     }
