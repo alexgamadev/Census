@@ -66,7 +66,7 @@ namespace Census.Metering
         }
 
         /// <summary>
-        /// Saves the local meter data to a text file at the given path.
+        /// Saves the local meter data to a JSON file at the given path.
         /// </summary>
         /// <param name="path">The path to save the meter data file to</param>
         /// <param name="clearLocalData">Whether to clear the local meter storage</param>
@@ -87,7 +87,7 @@ namespace Census.Metering
         /// <summary>
         /// Loads the JSON meter data stored at the given path, if it exists.
         /// </summary>
-        /// <param name="path">The path to save the meter data file to</param>
+        /// <param name="path">The path to load the meter data from</param>
         public void LoadData(string path)
         {
             //Load current meter data
