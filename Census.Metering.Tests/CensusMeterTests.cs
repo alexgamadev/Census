@@ -1,7 +1,9 @@
 ﻿using Moq;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Abstractions;
+using System.IO.Abstractions.TestingHelpers;
 using Xunit;
 
 namespace Census.Metering.Tests
@@ -149,14 +151,14 @@ namespace Census.Metering.Tests
 
         #endregion
 
-        #region SaveData (FileSystemTests)
+        #region SaveData (JsonTests)
 
         [Theory]
         [InlineData("Test1")]
         [InlineData("Test2")]
         public void SaveData_SingleMeterNoValue_StoresCorrectValue(string value)
         {
-            var path = "../Meters.txt";
+            var path = @"c:\test\meterdata.json";
 
             var mockFileIO = new Mock<IFileSystem>();
             mockFileIO.Setup(t => t.File.Exists(path)).Returns(false);
@@ -165,13 +167,13 @@ namespace Census.Metering.Tests
             censusMeter.Meter(value);
             censusMeter.SaveData(path);
 
-            mockFileIO.Verify(f => f.File.WriteAllText(path, $"{value}:1;"), Times.Once);
+            mockFileIO.Verify(f => f.File.WriteAllText(path, $"{{\"{value}\":1}}"), Times.Once);
         }
 
         [Fact]
         public void SaveData_DifferentMetersNoValue_StoresCorrectValues()
         {
-            var path = "../Meters.txt";
+            var path = @"c:\test\meterdata.json";
 
             var mockFileIO = new Mock<IFileSystem>();
             mockFileIO.Setup(t => t.File.Exists(path)).Returns(false);
@@ -181,13 +183,13 @@ namespace Census.Metering.Tests
             censusMeter.Meter("Test2");
             censusMeter.SaveData(path);
 
-            mockFileIO.Verify(f => f.File.WriteAllText(path, "Test1:1;Test2:1;"), Times.Once);
+            mockFileIO.Verify(f => f.File.WriteAllText(path, "{\"Test1\":1,\"Test2\":1}"), Times.Once);
         }
 
         [Fact]
         public void SaveData_SingleMeterDefaultClear_ClearsLocalData()
         {
-            var path = "../Meters.txt";
+            var path = @"c:\test\meterdata.json";
 
             var mockFileIO = new Mock<IFileSystem>();
             mockFileIO.Setup(t => t.File.Exists(path)).Returns(false);
@@ -197,14 +199,14 @@ namespace Census.Metering.Tests
             censusMeter.SaveData(path, true);
             var result = censusMeter.GetMeter("Test");
 
-            mockFileIO.Verify(f => f.File.WriteAllText(path, "Test:1;"), Times.Once);
+            mockFileIO.Verify(f => f.File.WriteAllText(path, "{\"Test\":1}"), Times.Once);
             Assert.Null(result);
         }
 
         [Fact]
         public void SaveData_SingleMeterNoLocalClear_LocalDataRemains()
         {
-            var path = "../Meters.txt";
+            var path = @"c:\test\meterdata.json";
 
             var mockFileIO = new Mock<IFileSystem>();
             mockFileIO.Setup(t => t.File.Exists(path)).Returns(false);
@@ -214,8 +216,106 @@ namespace Census.Metering.Tests
             censusMeter.SaveData(path);
             var result = censusMeter.GetMeter("Test");
 
-            mockFileIO.Verify(f => f.File.WriteAllText(path, "Test:1;"), Times.Once);
+            mockFileIO.Verify(f => f.File.WriteAllText(path, "{\"Test\":1}"), Times.Once);
             Assert.True(result == 1, "Local data isn't cleared");
+        }
+
+        [Fact]
+        public void SaveData_SameMeterMultipleTimes_JsonValueUpdated()
+        {
+            var path = @"c:\test\meterdata.json";
+
+            var mockFileIO = new MockFileSystem((new Dictionary<string, MockFileData>
+            {
+                { path, new MockFileData("{\"Test\":1}") }
+            }));
+
+            Assert.True(mockFileIO.File.Exists(path));
+
+            var censusMeter = new CensusMeter(mockFileIO);
+
+            censusMeter.Meter("Test", 4);
+            censusMeter.SaveData(path);
+
+            var content = mockFileIO.File.ReadAllText(path);
+            Assert.True(content == "{\"Test\":5}");
+        }
+
+        [Fact]
+        public void SaveData_MultipleMetersMultipleTimes_JsonValueUpdated()
+        {
+            var path = @"c:\test\meterdata.json";
+
+            var mockFileIO = new MockFileSystem((new Dictionary<string, MockFileData>
+            {
+                { path, new MockFileData("{\"Test1\":2,\"Test2\":4,\"Test4\":100}") }
+            }));
+
+            Assert.True(mockFileIO.File.Exists(path));
+
+            var censusMeter = new CensusMeter(mockFileIO);
+
+            censusMeter.Meter("Test1", 4);
+            censusMeter.Meter("Test2", 1025);
+            censusMeter.Meter("Test3", 500);
+            censusMeter.Meter("Test4", -200);
+            censusMeter.SaveData(path);
+
+            var content = mockFileIO.File.ReadAllText(path);
+            Assert.True(content == "{\"Test1\":6,\"Test2\":1029,\"Test3\":500,\"Test4\":-100}");
+        }
+
+        #endregion
+
+        #region LoadData (JsonTests)
+
+        [Theory]
+        [InlineData("Test1")]
+        [InlineData("Test2")]
+        public void LoadData_SingleMeter_LoadsCorrectValue(string value)
+        {
+            var path = @"c:\test\meterdata.json";
+
+            var mockFileIO = new MockFileSystem((new Dictionary<string, MockFileData>
+            {
+                { path, new MockFileData($"{{\"{value}\":1}}") }
+            }));
+
+            Assert.True(mockFileIO.File.Exists(path));
+
+            var censusMeter = new CensusMeter(mockFileIO);
+
+            censusMeter.LoadData(path);
+            var result = censusMeter.GetMeter(value);
+
+            Assert.True(result == 1);
+        }
+
+        [Fact]
+        public void LoadData_MultipleMeters_LoadsCorrectValues()
+        {
+            var path = @"c:\test\meterdata.json";
+
+            var mockFileIO = new MockFileSystem((new Dictionary<string, MockFileData>
+            {
+                { path, new MockFileData("{\"Test1\":2,\"Test2\":4,\"Test4\":100}") }
+            }));
+
+            Assert.True(mockFileIO.File.Exists(path));
+
+            var censusMeter = new CensusMeter(mockFileIO);
+
+            censusMeter.LoadData(path);
+            List<int?> results = new List<int?>
+            {
+                censusMeter.GetMeter("Test1"),
+                censusMeter.GetMeter("Test2"),
+                censusMeter.GetMeter("Test4")
+            };
+
+            var expectedResults = new List<int?> { 2, 4, 100 };
+
+            Assert.Equal(expectedResults, results);
         }
 
         #endregion

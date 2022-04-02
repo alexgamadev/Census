@@ -4,13 +4,14 @@ using System.IO;
 using System.IO.Abstractions;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Census.Metering
 {
     public class CensusMeter
     {
-        private readonly Dictionary<string, int> _meterValues = new Dictionary<string, int>();
+        private Dictionary<string, int> _meterValues = new Dictionary<string, int>();
         private readonly IFileSystem _fileSystem;
 
         public CensusMeter()
@@ -65,29 +66,49 @@ namespace Census.Metering
         }
 
         /// <summary>
-        /// Saves the local meter data to a text file at the given path.
+        /// Saves the local meter data to a JSON file at the given path.
         /// </summary>
         /// <param name="path">The path to save the meter data file to</param>
         /// <param name="clearLocalData">Whether to clear the local meter storage</param>
         public void SaveData(string path, bool clearLocalData = false)
         {
-            _fileSystem.File.WriteAllText(path, ConvertDataToText());
+            //Load current meter data
+            LoadData(path);
 
-            if( clearLocalData )
+            string jsonString = JsonSerializer.Serialize(_meterValues);
+            _fileSystem.File.WriteAllText(path, jsonString);
+
+            if ( clearLocalData )
             {
                 _meterValues.Clear();
             }
         }
 
-        private string ConvertDataToText()
+        /// <summary>
+        /// Loads the JSON meter data stored at the given path, if it exists.
+        /// </summary>
+        /// <param name="path">The path to load the meter data from</param>
+        public void LoadData(string path)
         {
-            string text = "";
-            foreach( var item in _meterValues )
+            //Load current meter data
+            //TODO: Move to it's own function
+            if (_fileSystem.File.Exists(path))
             {
-                text += $"{item.Key}:{item.Value};";
-            }
+                string storedJsonString = _fileSystem.File.ReadAllText(path);
+                var storedMeterValues = JsonSerializer.Deserialize<Dictionary<string, int>>(storedJsonString);
 
-            return text;
+                foreach (var item in storedMeterValues)
+                {
+                    if (_meterValues.ContainsKey(item.Key))
+                    {
+                        _meterValues[item.Key] += item.Value;
+                    }
+                    else
+                    {
+                        _meterValues.Add(item.Key, item.Value);
+                    }
+                }
+            }
         }
     }
 }
